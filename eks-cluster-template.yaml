@@ -3,12 +3,12 @@ kind: ClusterConfig
 
 metadata:
   name: tekton-pipeline-demo-cluster
-  region: eu-central-1
+  region: ap-northeast-1
   version: "1.18"
   tags:
     project: tekton-pipeline-demo
 
-availabilityZones: ["eu-central-1a", "eu-central-1b", "eu-central-1c"]
+availabilityZones: ["ap-northeast-1a", "eu-centra-lc", "ap-northeast-1d"]
 
 managedNodeGroups:
   - name: worker-ng-1
