@@ -149,7 +149,7 @@ docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/maven-builder:
 # Install AWS EBS CSI Driver
 echo "[INFO] $(date +"%T") Deploy aws-ebs-csi-driver [${AWS_EBS_CSI_DRIVER_VERSION}]..."
 helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver > /dev/null
-helm install -n kube-system aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver --version $AWS_EBS_CSI_DRIVER_VERSION --set enableVolumeResizing=true --set enableVolumeSnapshot=true --set serviceAccount.snapshot.create=false --set serviceAccount.controller.create=false --set serviceAccount.controller.name=ebs-csi-controller-sa --set serviceAccount.snapshot.name=ebs-csi-controller-sa > /dev/null
+helm install -n kube-system aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver --version $AWS_EBS_CSI_DRIVER_VERSION > /dev/null
 
 # Install AWS Load Balancer Controller
 echo "[INFO] $(date +"%T") Deploy aws-load-balancer-controller [${AWS_LB_CONTROLLER_VERSION}]..."
