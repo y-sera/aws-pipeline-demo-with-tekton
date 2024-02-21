@@ -66,7 +66,7 @@ export TEKTON_DEMO_GIT_USERNAME=$(aws iam list-service-specific-credentials --se
 
 # Create stack TetkonDemoBuckets
 echo "[INFO] $(date +"%T") Create <<TektonDemoBucket>> Cloudformation Stack..."
-aws cloudformation create-stack --stack-name="TektonDemoBuckets" --template-body file://cloudformation/demo-code-bucket.yaml --capabilities "CAPABILITY_IAM" > /dev/null
+aws cloudformation deploy --stack-name="TektonDemoBuckets" --template-file ./cloudformation/demo-code-bucket.yaml --capabilities "CAPABILITY_IAM" > /dev/null
 aws cloudformation wait stack-create-complete --stack-name="TektonDemoBuckets"
 
 # Fetch required stack output variables
@@ -119,7 +119,7 @@ export TEKTON_DEMO_CLUSTER_NODE_SG=$(aws cloudformation describe-stacks --stack-
 
 # Create CF Stack "TektonDemoInfra"
 echo "[INFO] $(date +"%T") Create <<TektonDemoInfra>> Cloudformation Stack..."
-aws cloudformation create-stack --stack-name="TektonDemoInfra" --template-body file://cloudformation/demo-infra.yaml --parameters ParameterKey=TektonDemoSourceBucket,ParameterValue="${TEKTON_DEMO_CODE_BUCKET}" ParameterKey=TektonDemoClusterSubnets,ParameterValue="${TEKTON_DEMO_CLUSTER_SUBNETS}" ParameterKey=TektonDemoClusterVpc,ParameterValue="${TEKTON_DEMO_CLUSTER_VPC}" ParameterKey=AllowedIpAddress,ParameterValue="${ALLOWED_SOURCE_IP_RANGE}" --capabilities "CAPABILITY_IAM" > /dev/null
+aws cloudformation deploy --stack-name="TektonDemoInfra" --template-file ./cloudformation/demo-infra.yaml --parameters ParameterKey=TektonDemoSourceBucket,ParameterValue="${TEKTON_DEMO_CODE_BUCKET}" ParameterKey=TektonDemoClusterSubnets,ParameterValue="${TEKTON_DEMO_CLUSTER_SUBNETS}" ParameterKey=TektonDemoClusterVpc,ParameterValue="${TEKTON_DEMO_CLUSTER_VPC}" ParameterKey=AllowedIpAddress,ParameterValue="${ALLOWED_SOURCE_IP_RANGE}" --capabilities "CAPABILITY_IAM" > /dev/null
 aws cloudformation wait stack-create-complete --stack-name="TektonDemoInfra"
 export TEKTON_DEMO_CHARTMUSEUM_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ChartmuseumSecurityGroup") | .OutputValue')
 export TEKTON_DEMO_DASHBOARD_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "DashboardSecurityGroup") | .OutputValue')
