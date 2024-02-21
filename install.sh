@@ -38,7 +38,7 @@ done
 
 ALLOWED_SOURCE_IP_RANGE="$(cat ./allowed_source_ip_range)"
 echo "[INFO] import Allowed Source IP Range(XXX.XXX.XXX.XXX/XX): $ALLOWED_SOURCE_IP_RANGE"
-if [[ $ALLOED_SOURCE_IP_RANGE =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+if [[ $ALLOWED_SOURCE_IP_RANGE =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
     export ALLOWED_SOURCE_IP_RANGE=$ALLOED_SOURCE_IP_RANGE
 else
     echo "[ERROR] $(date +"%T") Please insert valid ip address [format: XXX.XXX.XXX.XXX/XX]" >&2
