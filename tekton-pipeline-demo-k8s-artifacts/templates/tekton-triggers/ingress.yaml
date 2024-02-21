@@ -4,17 +4,18 @@ metadata:
   name: tekton-webhook-listener
   namespace: apps-build
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internal
     alb.ingress.kubernetes.io/tags: Project=tekton-pipeline-demo
     alb.ingress.kubernetes.io/group.name: webhook
     alb.ingress.kubernetes.io/security-groups: {{ .Values.triggers.ingress.securityGroup }}
 spec:
+  ingressClassName: alb
   rules:
   - http:
       paths:
       - path: /
         backend:
-          serviceName: el-codecommit-listener-interceptor
-          servicePort: 8080
+          service: el-codecommit-listener-interceptor
+          port:
+            number: 8080
         pathType: Prefix

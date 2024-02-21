@@ -2,7 +2,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/group.name: chartmuseum
     alb.ingress.kubernetes.io/scheme: internal
     alb.ingress.kubernetes.io/tags: Project=tekton-pipeline-demo
@@ -10,11 +9,13 @@ metadata:
   name: chartmuseum
   namespace: support
 spec:
+  ingressClassName: alb
   rules:
   - http:
       paths:
       - backend:
-          serviceName: chartmuseum
-          servicePort: 8080
+          service: chartmuseum
+          port:
+            number: 8080
         path: /*
         pathType: Prefix
