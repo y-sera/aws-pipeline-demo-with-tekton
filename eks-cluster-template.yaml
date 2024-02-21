@@ -2,13 +2,13 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: tekton-pipeline-demo-cluster
+  name: eks-handson-cluster
   region: ap-northeast-1
-  version: "1.18"
+  version: "1.29"
   tags:
-    project: tekton-pipeline-demo
+    project: eks-handson
 
-availabilityZones: ["ap-northeast-1a", "eu-centra-lc", "ap-northeast-1d"]
+availabilityZones: ["ap-northeast-1a", "ap-northeast-lc", "ap-northeast-1d"]
 
 managedNodeGroups:
   - name: worker-ng-1
@@ -18,5 +18,5 @@ managedNodeGroups:
     labels:
       role: workers
     tags:
-      project: tekton-pipeline-demo
+      project: eks-handson
     
