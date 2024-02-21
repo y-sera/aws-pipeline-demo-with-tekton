@@ -5,7 +5,7 @@ set -e
 export TEKTON_PIPELINE_VERSION="v0.56.1"
 export TEKTON_TRIGGERS_VERSION="v0.26.1"
 export TEKTON_DASHBOARD_VERSION="v0.43.1"
-export CHARTMUSEUM_VERSION="0.16.1"
+export CHARTMUSEUM_VERSION="3.1.0"
 export AWS_LB_CONTROLLER_VERSION="1.7.1"
 export AWS_EBS_CSI_DRIVER_VERSION="2.27.0"
 export ARGOCD_VERSION="v2.10.1"
@@ -35,14 +35,14 @@ while true; do
     esac 
 done
 
-while true; do
-    read -p "Please enter your public ip address [XXX.XXX.XXX.XXX] " MY_IP_ADDRESS
-    if [[ $MY_IP_ADDRESS =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        export MY_IP_ADDRESS && break
-    else
-        echo "[ERROR] $(date +"%T") Please insert valid ip address [format: XXX.XXX.XXX.XXX]" >&2
-    fi
-done
+
+ALLOWED_SOURCE_IP_RANGE="$(cat ./allow_source_ip_range)"
+echo "[INFO] import Allowed Source IP Range(XXX.XXX.XXX.XXX/XX): $ALLOWED_SOURCE_IP_RANGE"
+if [[ $ALLOED_SOURCE_IP_RANGE =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+    export ALLOWED_SOURCE_IP_RANGE=$ALLOED_SOURCE_IP_RANGE
+else
+    echo "[ERROR] $(date +"%T") Please insert valid ip address [format: XXX.XXX.XXX.XXX/XX]" >&2
+fi
 
 while true; do
     read -p "Please enter the name of your EKS Cluster () " EKS_CLUSTER_NAME
@@ -119,7 +119,7 @@ export TEKTON_DEMO_CLUSTER_NODE_SG=$(aws cloudformation describe-stacks --stack-
 
 # Create CF Stack "TektonDemoInfra"
 echo "[INFO] $(date +"%T") Create <<TektonDemoInfra>> Cloudformation Stack..."
-aws cloudformation create-stack --stack-name="TektonDemoInfra" --template-body file://cloudformation/demo-infra.yaml --parameters ParameterKey=TektonDemoSourceBucket,ParameterValue="${TEKTON_DEMO_CODE_BUCKET}" ParameterKey=TektonDemoClusterSubnets,ParameterValue="${TEKTON_DEMO_CLUSTER_SUBNETS}" ParameterKey=TektonDemoClusterVpc,ParameterValue="${TEKTON_DEMO_CLUSTER_VPC}" ParameterKey=AllowedIpAddress,ParameterValue="${MY_IP_ADDRESS}" --capabilities "CAPABILITY_IAM" > /dev/null
+aws cloudformation create-stack --stack-name="TektonDemoInfra" --template-body file://cloudformation/demo-infra.yaml --parameters ParameterKey=TektonDemoSourceBucket,ParameterValue="${TEKTON_DEMO_CODE_BUCKET}" ParameterKey=TektonDemoClusterSubnets,ParameterValue="${TEKTON_DEMO_CLUSTER_SUBNETS}" ParameterKey=TektonDemoClusterVpc,ParameterValue="${TEKTON_DEMO_CLUSTER_VPC}" ParameterKey=AllowedIpAddress,ParameterValue="${ALLOWED_SOURCE_IP_RANGE}" --capabilities "CAPABILITY_IAM" > /dev/null
 aws cloudformation wait stack-create-complete --stack-name="TektonDemoInfra"
 export TEKTON_DEMO_CHARTMUSEUM_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ChartmuseumSecurityGroup") | .OutputValue')
 export TEKTON_DEMO_DASHBOARD_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "DashboardSecurityGroup") | .OutputValue')
@@ -154,7 +154,7 @@ helm install -n kube-system aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-dr
 # Install AWS Load Balancer Controller
 echo "[INFO] $(date +"%T") Deploy aws-load-balancer-controller [${AWS_LB_CONTROLLER_VERSION}]..."
 helm repo add eks https://aws.github.io/eks-charts > /dev/null
-helm install aws-load-balancer-controller eks/aws-load-balancer-controller --version $AWS_LB_CONTROLLER_VERSION --set clusterName=tekton-pipeline-demo-cluster -n kube-system --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller > /dev/null
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller --version $AWS_LB_CONTROLLER_VERSION --set clusterName=${EKS_CLUSTER_NAME} -n kube-system --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller --set region=$AWS_REGION --set vpcId=$TEKTON_DEMO_CLUSTER_VPC > /dev/null
 
 ###########################
 # Install Tekton components
@@ -170,7 +170,7 @@ kubectl apply --filename https://storage.googleapis.com/tekton-releases/triggers
 
 # Install Tekton Dashboard
 echo "[INFO] $(date +"%T") Deploy Tekton Dashboard [${TEKTON_DASHBOARD_VERSION}]..."
-kubectl apply --filename https://github.com/tektoncd/dashboard/releases/download/${TEKTON_DASHBOARD_VERSION}/tekton-dashboard-release.yaml
+kubectl apply --filename https://github.com/tektoncd/dashboard/releases/download/${TEKTON_DASHBOARD_VERSION}/release.yaml
 
 # Install Chartmuseum
 echo "[INFO] $(date +"%T") Deploy Chartmuseum [${CHARTMUSEUM_VERSION}]..."

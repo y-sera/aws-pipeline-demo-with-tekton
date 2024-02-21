@@ -183,7 +183,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: !Sub "${AllowedIpAddress}/32"
+          CidrIp: !Sub "${AllowedIpAddress}"
 
   TektonDemoAppSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -194,7 +194,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: !Sub "${AllowedIpAddress}/32"
+          CidrIp: !Sub "${AllowedIpAddress}"
 
 Outputs:
   AppSecurityGroup:

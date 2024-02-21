@@ -1,6 +1,6 @@
 region: "${AWS_REGION}"
 accountId: "${AWS_ACCOUNT_ID}"
-allowedIpRange: "${MY_IP_ADDRESS}/32"
+allowedIpRange: "${ALLOWED_SOURCE_IP_RANGE}"
 chartmuseum:
   ingress:
     securityGroup: "${TEKTON_DEMO_CHARTMUSEUM_SG}"
