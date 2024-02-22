@@ -11,15 +11,6 @@ export AWS_EBS_CSI_DRIVER_VERSION="2.27.0"
 export ARGOCD_VERSION="v2.10.1"
 export EKS_VERSION="1.29"
 
-# Check for prerequisites
-for tool in aws kubectl eksctl aws-iam-authenticator kubectl helm jq envsubst base64
-do
-    if ! [ -x "$(command -v $tool)" ]; then
-        echo "[ERROR] $(date +"%T") $tool is not installed. Please install $tool before running the script again" >&2
-        exit 1
-    fi
-done
-
 export AWS_AUTHENTICATED_IDENTITY=$(aws sts get-caller-identity | jq -r .Arn | cut -d "/" -f2)
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
 export AWS_REGION=$(aws configure get region)
@@ -44,25 +35,41 @@ else
     echo "[ERROR] $(date +"%T") Please insert valid ip address [format: XXX.XXX.XXX.XXX/XX]" >&2
 fi
 
-while true; do
-    read -p "Please enter the name of your EKS Cluster () " EKS_CLUSTER_NAME
-    EKS_CLUSTER_STACK="eksctl-${EKS_CLUSTER_NAME}-cluster"
-    if [[ $(aws cloudformation describe-stacks --stack-name="$EKS_CLUSTER_STACK" | jq -r '.Stacks[0].StackStatus') = "CREATE_COMPLETE" ]]; then
-        export EKS_CLUSTER_STACK && export EKS_CLUSTER_NAME && break
-    else
-        echo "[ERROR] $(date +"%T") Invalid Cluster Name provided or cluster not yet ready" >&2
-    fi
-done
+EKS_CLUSTER_NAME="eks-handson-cluster"
+EKS_CLUSTER_STACK="eksctl-${EKS_CLUSTER_NAME}-cluster"
+if [[ $(aws cloudformation describe-stacks --stack-name="$EKS_CLUSTER_STACK" | jq -r '.Stacks[0].StackStatus') = "CREATE_COMPLETE" ]]; then
+    export EKS_CLUSTER_STACK && export EKS_CLUSTER_NAME && break
+else
+    echo "[ERROR] $(date +"%T") Invalid Cluster Name provided or cluster not yet ready" >&2
+fi
+
+export TEKTON_DEMO_CLUSTER_SUBNETS=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq '.Stacks[0].Outputs[] | select(.OutputKey == "SubnetsPrivate") | .OutputValue')
+export TEKTON_DEMO_CLUSTER_VPC=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "VPC") | .OutputValue')
+export TEKTON_DEMO_CLUSTER_NODE_SG=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ClusterSecurityGroupId") | .OutputValue')
+
 
 echo $EKS_CLUSTER_STACK
 echo $EKS_CLUSTER_NAME
 echo $AWS_REGION
 
-# Generate GIT Credentials for CodeCommit
-echo "[INFO] $(date +"%T") Create git credentials for user ${AWS_AUTHENTICATED_IDENTITY}..."
-export TEKTON_DEMO_GIT_PASSWORD_RAW=$(aws iam create-service-specific-credential --service-name codecommit.amazonaws.com --user-name $AWS_AUTHENTICATED_IDENTITY | jq -r .ServiceSpecificCredential.ServicePassword)
-export TEKTON_DEMO_GIT_PASSWORD=$(echo -n $TEKTON_DEMO_GIT_PASSWORD_RAW | jq -Rr @uri)
-export TEKTON_DEMO_GIT_USERNAME=$(aws iam list-service-specific-credentials --service-name codecommit.amazonaws.com --user-name ${AWS_AUTHENTICATED_IDENTITY} | jq -r '.ServiceSpecificCredentials[] | select(.ServiceName == "codecommit.amazonaws.com") | .ServiceUserName')
+
+
+# Create OIDC Provider & ServiceAccount for addons
+echo "[INFO] $(date +"%T") Configure EKS Cluster..."
+eksctl utils associate-iam-oidc-provider --cluster=$EKS_CLUSTER_NAME --approve
+eksctl create iamserviceaccount --config-file=eks-cluster-addon-sa-config.yaml --approve
+
+# Install AWS EBS CSI Driver
+echo "[INFO] $(date +"%T") Deploy aws-ebs-csi-driver [${AWS_EBS_CSI_DRIVER_VERSION}]..."
+helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver > /dev/null
+helm install -n kube-system aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver --version $AWS_EBS_CSI_DRIVER_VERSION --set controller.serviceAccount.create=false > /dev/null
+
+# Install AWS Load Balancer Controller
+echo "[INFO] $(date +"%T") Deploy aws-load-balancer-controller [${AWS_LB_CONTROLLER_VERSION}]..."
+helm repo add eks https://aws.github.io/eks-charts > /dev/null
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller --version $AWS_LB_CONTROLLER_VERSION --set clusterName=${EKS_CLUSTER_NAME} -n kube-system --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller --set region=$AWS_REGION --set vpcId=$TEKTON_DEMO_CLUSTER_VPC > /dev/null
+
+
 
 # Create stack TetkonDemoBuckets
 echo "[INFO] $(date +"%T") Create <<TektonDemoBucket>> Cloudformation Stack..."
@@ -74,6 +81,14 @@ echo "[INFO] $(date +"%T") Fetch <<TektonDemoBucket>> Cloudformation Stack outpu
 export TEKTON_DEMO_CHARTMUSEUM_BUCKET=$(aws cloudformation describe-stacks --stack-name TektonDemoBuckets | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ChartmuseumBucket") | .OutputValue')
 export TEKTON_DEMO_CHARTMUSEUM_POLICY=$(aws cloudformation describe-stacks --stack-name TektonDemoBuckets | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "PolicyArnForChartMuseumSa") | .OutputValue')
 export TEKTON_DEMO_CODE_BUCKET=$(aws cloudformation describe-stacks --stack-name TektonDemoBuckets | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "CodeBucket") | .OutputValue')
+
+
+
+# Generate GIT Credentials for CodeCommit
+echo "[INFO] $(date +"%T") Create git credentials for user ${AWS_AUTHENTICATED_IDENTITY}..."
+export TEKTON_DEMO_GIT_PASSWORD_RAW=$(aws iam create-service-specific-credential --service-name codecommit.amazonaws.com --user-name $AWS_AUTHENTICATED_IDENTITY | jq -r .ServiceSpecificCredential.ServicePassword)
+export TEKTON_DEMO_GIT_PASSWORD=$(echo -n $TEKTON_DEMO_GIT_PASSWORD_RAW | jq -Rr @uri)
+export TEKTON_DEMO_GIT_USERNAME=$(aws iam list-service-specific-credentials --service-name codecommit.amazonaws.com --user-name ${AWS_AUTHENTICATED_IDENTITY} | jq -r '.ServiceSpecificCredentials[] | select(.ServiceName == "codecommit.amazonaws.com") | .ServiceUserName')
 
 # Package and upload helm-springboot master helm chart
 echo "[INFO] $(date +"%T") Package helm master chart and upload to S3..."
@@ -108,14 +123,6 @@ rm -f tekton-pipeline-demo-webhook-code.zip
 rm -f tekton-webhook-middleware
 cd ..
 
-# # Create the EKS Cluster
-echo "[INFO] $(date +"%T") Configure EKS Cluster..."
-cat eks-cluster-iam-config.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE eks-cluster-iam-config.yaml
-eksctl utils associate-iam-oidc-provider --cluster=$EKS_CLUSTER_NAME --approve
-eksctl create iamserviceaccount --config-file=eks-cluster-iam-config.yaml --approve
-export TEKTON_DEMO_CLUSTER_SUBNETS=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq '.Stacks[0].Outputs[] | select(.OutputKey == "SubnetsPrivate") | .OutputValue')
-export TEKTON_DEMO_CLUSTER_VPC=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "VPC") | .OutputValue')
-export TEKTON_DEMO_CLUSTER_NODE_SG=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ClusterSecurityGroupId") | .OutputValue')
 
 # Create CF Stack "TektonDemoInfra"
 echo "[INFO] $(date +"%T") Create <<TektonDemoInfra>> Cloudformation Stack..."
@@ -146,15 +153,9 @@ docker build -t maven-builder ./docker/maven-builder > /dev/null
 docker tag maven-builder:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/maven-builder:latest
 docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/maven-builder:latest > /dev/null 
 
-# Install AWS EBS CSI Driver
-echo "[INFO] $(date +"%T") Deploy aws-ebs-csi-driver [${AWS_EBS_CSI_DRIVER_VERSION}]..."
-helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver > /dev/null
-helm install -n kube-system aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver --version $AWS_EBS_CSI_DRIVER_VERSION --set controller.serviceAccount.create=false > /dev/null
-
-# Install AWS Load Balancer Controller
-echo "[INFO] $(date +"%T") Deploy aws-load-balancer-controller [${AWS_LB_CONTROLLER_VERSION}]..."
-helm repo add eks https://aws.github.io/eks-charts > /dev/null
-helm install aws-load-balancer-controller eks/aws-load-balancer-controller --version $AWS_LB_CONTROLLER_VERSION --set clusterName=${EKS_CLUSTER_NAME} -n kube-system --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller --set region=$AWS_REGION --set vpcId=$TEKTON_DEMO_CLUSTER_VPC > /dev/null
+# Create Service Account
+cat eks-cluster-iam-config.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE eks-cluster-iam-config.yaml
+eksctl create iamserviceaccount --config-file=eks-cluster-addon-sa-config.yaml --approve
 
 ###########################
 # Install Tekton components
