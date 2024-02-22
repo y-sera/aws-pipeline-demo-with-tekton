@@ -74,7 +74,6 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller --ver
 # Create stack TetkonDemoBuckets
 echo "[INFO] $(date +"%T") Create <<TektonDemoBucket>> Cloudformation Stack..."
 aws cloudformation deploy --stack-name="TektonDemoBuckets" --template-file ./cloudformation/demo-code-bucket.yaml --capabilities "CAPABILITY_IAM" > /dev/null
-aws cloudformation wait stack-create-complete --stack-name="TektonDemoBuckets"
 
 # Fetch required stack output variables
 echo "[INFO] $(date +"%T") Fetch <<TektonDemoBucket>> Cloudformation Stack output variables..."
@@ -126,7 +125,7 @@ cd ..
 
 # Create CF Stack "TektonDemoInfra"
 echo "[INFO] $(date +"%T") Create <<TektonDemoInfra>> Cloudformation Stack..."
-aws cloudformation deploy --stack-name="TektonDemoInfra" --template-file ./cloudformation/demo-infra.yaml --parameters ParameterKey=TektonDemoSourceBucket,ParameterValue="${TEKTON_DEMO_CODE_BUCKET}" ParameterKey=TektonDemoClusterSubnets,ParameterValue="${TEKTON_DEMO_CLUSTER_SUBNETS}" ParameterKey=TektonDemoClusterVpc,ParameterValue="${TEKTON_DEMO_CLUSTER_VPC}" ParameterKey=AllowedIpAddress,ParameterValue="${ALLOWED_SOURCE_IP_RANGE}" --capabilities "CAPABILITY_IAM" > /dev/null
+aws cloudformation deploy --stack-name="TektonDemoInfra" --template-file ./cloudformation/demo-infra.yaml --parameter-overrides TektonDemoSourceBucket="${TEKTON_DEMO_CODE_BUCKET}" TektonDemoClusterSubnets="${TEKTON_DEMO_CLUSTER_SUBNETS}" TektonDemoClusterVpc="${TEKTON_DEMO_CLUSTER_VPC}" AllowedIpAddress="${ALLOWED_SOURCE_IP_RANGE}" --capabilities "CAPABILITY_IAM" > /dev/null
 aws cloudformation wait stack-create-complete --stack-name="TektonDemoInfra"
 export TEKTON_DEMO_CHARTMUSEUM_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ChartmuseumSecurityGroup") | .OutputValue')
 export TEKTON_DEMO_DASHBOARD_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "DashboardSecurityGroup") | .OutputValue')
