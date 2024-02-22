@@ -19,15 +19,3 @@ iam:
         namespace: support
       attachPolicyARNs:
         - $TEKTON_DEMO_CHARTMUSEUM_POLICY
-    - metadata:
-        name: aws-lb-controller-sa
-        namespace: kube-system
-      wellKnownPolicies:
-        awsLoadBalancerController: true
-    - metadata:
-        name: ebs-csi-controller-sa
-        namespace: kube-system
-      wellKnownPolicies:
-        ebsCSIController: true
-
-    
