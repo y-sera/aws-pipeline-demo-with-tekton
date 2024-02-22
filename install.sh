@@ -38,7 +38,7 @@ fi
 EKS_CLUSTER_NAME="eks-handson-cluster"
 EKS_CLUSTER_STACK="eksctl-${EKS_CLUSTER_NAME}-cluster"
 if [[ $(aws cloudformation describe-stacks --stack-name="$EKS_CLUSTER_STACK" | jq -r '.Stacks[0].StackStatus') = "CREATE_COMPLETE" ]]; then
-    export EKS_CLUSTER_STACK && export EKS_CLUSTER_NAME && break
+    export EKS_CLUSTER_STACK && export EKS_CLUSTER_NAME
 else
     echo "[ERROR] $(date +"%T") Invalid Cluster Name provided or cluster not yet ready" >&2
 fi
