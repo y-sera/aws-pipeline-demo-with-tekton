@@ -8,7 +8,7 @@ metadata:
   tags:
     project: eks-handson
 
-availabilityZones: ["ap-northeast-1a", "ap-northeast-lc", "ap-northeast-1d"]
+availabilityZones: ["ap-northeast-1a", "ap-northeast-1c", "ap-northeast-1d"]
 
 managedNodeGroups:
   - name: worker-ng-1
