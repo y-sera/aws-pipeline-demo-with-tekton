@@ -56,12 +56,12 @@ eksctl create iamserviceaccount --config-file=eks-cluster-addon-sa-config.yaml -
 # Install AWS EBS CSI Driver
 echo "[INFO] $(date +"%T") Deploy aws-ebs-csi-driver [${AWS_EBS_CSI_DRIVER_VERSION}]..."
 helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver > /dev/null
-helm install -n kube-system aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver --version $AWS_EBS_CSI_DRIVER_VERSION --set controller.serviceAccount.create=false > /dev/null
+helm upgrade --install -n kube-system aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver --version $AWS_EBS_CSI_DRIVER_VERSION --set controller.serviceAccount.create=false > /dev/null
 
 # Install AWS Load Balancer Controller
 echo "[INFO] $(date +"%T") Deploy aws-load-balancer-controller [${AWS_LB_CONTROLLER_VERSION}]..."
 helm repo add eks https://aws.github.io/eks-charts > /dev/null
-helm install aws-load-balancer-controller eks/aws-load-balancer-controller --version $AWS_LB_CONTROLLER_VERSION --set clusterName=${EKS_CLUSTER_NAME} -n kube-system --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller --set region=$AWS_REGION --set vpcId=$TEKTON_DEMO_CLUSTER_VPC > /dev/null
+helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller --version $AWS_LB_CONTROLLER_VERSION --set clusterName=${EKS_CLUSTER_NAME} -n kube-system --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller --set region=$AWS_REGION --set vpcId=$TEKTON_DEMO_CLUSTER_VPC > /dev/null
 
 
 
@@ -165,7 +165,7 @@ echo "[INFO] $(date +"%T") Deploy Chartmuseum [${CHARTMUSEUM_VERSION}]..."
 helm repo add chartmuseum https://chartmuseum.github.io/charts > /dev/null
 cat chartmuseum-values.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE chartmuseum-values.yaml
 kubectl create namespace argocd
-helm install -n support chartmuseum chartmuseum/chartmuseum --version $CHARTMUSEUM_VERSION -f chartmuseum-values.yaml > /dev/null
+helm --upgrade install -n support chartmuseum chartmuseum/chartmuseum --version $CHARTMUSEUM_VERSION -f chartmuseum-values.yaml > /dev/null
 
 # Install ArgoCD
 echo "[INFO] $(date +"%T") Deploy ArgoCD [${ARGOCD_VERSION}]..."
@@ -194,7 +194,7 @@ export TEKTON_DEMO_GIT_USERNAME=$(aws iam list-service-specific-credentials --se
 # INSTALL TEKTON DEMO
 echo "[INFO] $(date +"%T") Deploy resources related to the demo..."
 cat tekton-pipeline-demo-k8s-artifacts/values.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE tekton-pipeline-demo-k8s-artifacts/values.yaml
-helm install tekton-pipeline-demo-k8s-artifacts -f tekton-pipeline-demo-k8s-artifacts/values.yaml --generate-name > /dev/null 
+helm upgrade --install tekton-pipeline-demo-k8s-artifacts -f tekton-pipeline-demo-k8s-artifacts/values.yaml --generate-name > /dev/null 
 sleep 30
 
 # Adjust Tekton Webhook
