@@ -164,6 +164,7 @@ kubectl apply --filename https://github.com/tektoncd/dashboard/releases/download
 echo "[INFO] $(date +"%T") Deploy Chartmuseum [${CHARTMUSEUM_VERSION}]..."
 helm repo add chartmuseum https://chartmuseum.github.io/charts > /dev/null
 cat chartmuseum-values.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE chartmuseum-values.yaml
+kubectl create namespace argocd
 helm install -n support chartmuseum chartmuseum/chartmuseum --version $CHARTMUSEUM_VERSION -f chartmuseum-values.yaml > /dev/null
 
 # Install ArgoCD
