@@ -193,7 +193,7 @@ export TEKTON_DEMO_GIT_USERNAME=$(aws iam list-service-specific-credentials --se
 # INSTALL TEKTON DEMO
 echo "[INFO] $(date +"%T") Deploy resources related to the demo..."
 cat tekton-pipeline-demo-k8s-artifacts/values.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE tekton-pipeline-demo-k8s-artifacts/values.yaml
-helm upgrade --install tekton-pipeline-demo-k8s-artifacts -f tekton-pipeline-demo-k8s-artifacts/values.yaml --generate-name > /dev/null 
+helm install tekton-pipeline-demo-k8s-artifacts -f tekton-pipeline-demo-k8s-artifacts/values.yaml --generate-name > /dev/null 
 sleep 30
 
 # Adjust Tekton Webhook
