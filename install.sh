@@ -17,41 +17,35 @@ export AWS_REGION=$(aws configure get region)
 export TMP_FILE=$(mktemp)
 export DOCKER_SCAN_SUGGEST=false
 
-while true; do
-    read -p "Install resources as $AWS_AUTHENTICATED_IDENTITY within account $AWS_ACCOUNT_ID in region $AWS_REGION [Y/N] " yn
-    case $yn in
-        [Yy]* ) break;;
-        [Nn]* ) exit 1;;
-        * ) echo "[ERROR] $(date +"%T") Please answer yes [Y|y] or no [N|n]." >&2;;
-    esac 
-done
+export EKS_CLUSTER_NAME="eks-handson-cluster"
+export EKS_CLUSTER_STACK="eksctl-${EKS_CLUSTER_NAME}-cluster"
 
+echo "[INFO] Install resources as $AWS_AUTHENTICATED_IDENTITY within account $AWS_ACCOUNT_ID in region $AWS_REGION"
+echo "[INFO] Cluster Name: $EKS_CLUSTER_NAME"
 
-ALLOWED_SOURCE_IP_RANGE="$(cat ./allowed_source_ip_range)"
-echo "[INFO] import Allowed Source IP Range(XXX.XXX.XXX.XXX/XX): $ALLOWED_SOURCE_IP_RANGE"
-if [[ $ALLOWED_SOURCE_IP_RANGE =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
-    export ALLOWED_SOURCE_IP_RANGE
-else
-    echo "[ERROR] $(date +"%T") Please insert valid ip address [format: XXX.XXX.XXX.XXX/XX]" >&2
-fi
-
-EKS_CLUSTER_NAME="eks-handson-cluster"
-EKS_CLUSTER_STACK="eksctl-${EKS_CLUSTER_NAME}-cluster"
+# check cluster stack
 if [[ $(aws cloudformation describe-stacks --stack-name="$EKS_CLUSTER_STACK" | jq -r '.Stacks[0].StackStatus') = "CREATE_COMPLETE" ]]; then
-    export EKS_CLUSTER_STACK && export EKS_CLUSTER_NAME
+    echo "[INFO] Cluster Stack Name: $EKS_CLUSTER_STACK"
 else
     echo "[ERROR] $(date +"%T") Invalid Cluster Name provided or cluster not yet ready" >&2
 fi
 
-export TEKTON_DEMO_CLUSTER_SUBNETS=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq '.Stacks[0].Outputs[] | select(.OutputKey == "SubnetsPrivate") | .OutputValue')
+export TEKTON_DEMO_CLUSTER_SUBNETS=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "SubnetsPrivate") | .OutputValue')
 export TEKTON_DEMO_CLUSTER_VPC=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "VPC") | .OutputValue')
 export TEKTON_DEMO_CLUSTER_NODE_SG=$(aws cloudformation describe-stacks --stack-name $EKS_CLUSTER_STACK | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ClusterSecurityGroupId") | .OutputValue')
 
+echo "[INFO] Cluster VPC: $TEKTON_DEMO_CLUSTER_VPC"
+echo "[INFO] Cluster Subnet: $TEKTON_DEMO_CLUSTER_SUBNETS"
+echo "[INFO] Cluster Node Security Group: $TEKTON_DEMO_CLUSTER_NODE_SG"
 
-echo $EKS_CLUSTER_STACK
-echo $EKS_CLUSTER_NAME
-echo $AWS_REGION
 
+# check allowed source IP
+export ALLOWED_SOURCE_IP_RANGE="$(cat ./allowed_source_ip_range)"
+if [[ $ALLOWED_SOURCE_IP_RANGE =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+    echo "[INFO] import Allowed Source IP Range from ./allowed_source_ip_range (XXX.XXX.XXX.XXX/XX): $ALLOWED_SOURCE_IP_RANGE"
+else
+    echo "[ERROR] $(date +"%T") Please insert valid ip address [format: XXX.XXX.XXX.XXX/XX]" >&2
+fi
 
 
 # Create OIDC Provider & ServiceAccount for addons
@@ -82,12 +76,6 @@ export TEKTON_DEMO_CHARTMUSEUM_POLICY=$(aws cloudformation describe-stacks --sta
 export TEKTON_DEMO_CODE_BUCKET=$(aws cloudformation describe-stacks --stack-name TektonDemoBuckets | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "CodeBucket") | .OutputValue')
 
 
-
-# Generate GIT Credentials for CodeCommit
-echo "[INFO] $(date +"%T") Create git credentials for user ${AWS_AUTHENTICATED_IDENTITY}..."
-export TEKTON_DEMO_GIT_PASSWORD_RAW=$(aws iam create-service-specific-credential --service-name codecommit.amazonaws.com --user-name $AWS_AUTHENTICATED_IDENTITY | jq -r .ServiceSpecificCredential.ServicePassword)
-export TEKTON_DEMO_GIT_PASSWORD=$(echo -n $TEKTON_DEMO_GIT_PASSWORD_RAW | jq -Rr @uri)
-export TEKTON_DEMO_GIT_USERNAME=$(aws iam list-service-specific-credentials --service-name codecommit.amazonaws.com --user-name ${AWS_AUTHENTICATED_IDENTITY} | jq -r '.ServiceSpecificCredentials[] | select(.ServiceName == "codecommit.amazonaws.com") | .ServiceUserName')
 
 # Package and upload helm-springboot master helm chart
 echo "[INFO] $(date +"%T") Package helm master chart and upload to S3..."
@@ -152,7 +140,7 @@ docker build -t maven-builder ./docker/maven-builder > /dev/null
 docker tag maven-builder:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/maven-builder:latest
 docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/maven-builder:latest > /dev/null 
 
-# Create Service Account
+# Create Service Account for tekton components
 cat eks-cluster-iam-config.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE eks-cluster-iam-config.yaml
 eksctl create iamserviceaccount --config-file=eks-cluster-addon-sa-config.yaml --approve
 
@@ -190,7 +178,19 @@ kubectl patch svc chartmuseum -n support -p '{"spec": {"type": "NodePort"}}'
 kubectl -n argocd delete cm argocd-cm
 kubectl -n argocd delete svc argocd-server
 
-# INSTALL TEKTON DEMO 
+
+
+#####################
+# Setup tekton Demo
+#####################
+
+# Generate GIT Credentials for CodeCommit
+echo "[INFO] $(date +"%T") Create git credentials for user ${AWS_AUTHENTICATED_IDENTITY}..."
+export TEKTON_DEMO_GIT_PASSWORD_RAW=$(aws iam create-service-specific-credential --service-name codecommit.amazonaws.com --user-name $AWS_AUTHENTICATED_IDENTITY | jq -r .ServiceSpecificCredential.ServicePassword)
+export TEKTON_DEMO_GIT_PASSWORD=$(echo -n $TEKTON_DEMO_GIT_PASSWORD_RAW | jq -Rr @uri)
+export TEKTON_DEMO_GIT_USERNAME=$(aws iam list-service-specific-credentials --service-name codecommit.amazonaws.com --user-name ${AWS_AUTHENTICATED_IDENTITY} | jq -r '.ServiceSpecificCredentials[] | select(.ServiceName == "codecommit.amazonaws.com") | .ServiceUserName')
+
+# INSTALL TEKTON DEMO
 echo "[INFO] $(date +"%T") Deploy resources related to the demo..."
 cat tekton-pipeline-demo-k8s-artifacts/values.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE tekton-pipeline-demo-k8s-artifacts/values.yaml
 helm install tekton-pipeline-demo-k8s-artifacts -f tekton-pipeline-demo-k8s-artifacts/values.yaml --generate-name > /dev/null 
