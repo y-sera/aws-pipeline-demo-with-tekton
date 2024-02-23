@@ -114,7 +114,6 @@ cd ..
 # Create CF Stack "TektonDemoInfra"
 echo "[INFO] $(date +"%T") Create <<TektonDemoInfra>> Cloudformation Stack..."
 aws cloudformation deploy --stack-name="TektonDemoInfra" --template-file ./cloudformation/demo-infra.yaml --parameter-overrides TektonDemoSourceBucket="${TEKTON_DEMO_CODE_BUCKET}" TektonDemoClusterSubnets="${TEKTON_DEMO_CLUSTER_SUBNETS}" TektonDemoClusterVpc="${TEKTON_DEMO_CLUSTER_VPC}" AllowedIpAddress="${ALLOWED_SOURCE_IP_RANGE}" --capabilities "CAPABILITY_IAM" > /dev/null
-aws cloudformation wait stack-create-complete --stack-name="TektonDemoInfra"
 export TEKTON_DEMO_CHARTMUSEUM_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ChartmuseumSecurityGroup") | .OutputValue')
 export TEKTON_DEMO_DASHBOARD_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "DashboardSecurityGroup") | .OutputValue')
 export TEKTON_DEMO_APP_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "AppSecurityGroup") | .OutputValue')
