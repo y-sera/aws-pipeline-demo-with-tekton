@@ -9,7 +9,7 @@ iam:
   withOIDC: true
   serviceAccounts:
     - metadata:
-        name: aws-load-controller-controller
+        name: aws-load-balancer-controller
         namespace: kube-system
       wellKnownPolicies:
         awsLoadBalancerController: true
