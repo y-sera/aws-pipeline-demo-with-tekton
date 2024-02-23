@@ -127,7 +127,7 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref TektonDemoWebhookFunction
-      Principal: codecommit.amazonaws.com	
+      Principal: codecommit.amazonaws.com
       SourceAccount: !Ref AWS::AccountId
       SourceArn: !GetAtt TektonDemoBuildRepo.Arn
 
