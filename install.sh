@@ -142,7 +142,7 @@ docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/maven-builder:
 
 # Create Service Account for tekton components
 cat eks-cluster-iam-config.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE eks-cluster-iam-config.yaml
-eksctl create iamserviceaccount --config-file=eks-cluster-addon-sa-config.yaml --approve
+eksctl create iamserviceaccount --config-file=eks-cluster-iam-config.yaml --approve
 
 ###########################
 # Install Tekton components
@@ -205,7 +205,7 @@ aws lambda update-function-configuration --function-name=TektonPipelineDemoWebho
 export TEKTON_DEMO_CHARTMUSEUM_URL=$(aws elbv2 describe-load-balancers | jq -r '.LoadBalancers[] | select(.DNSName | contains("chartmuseum")) | .DNSName')
 
 echo "[INFO] $(date +"%T") Update manifest files within deploy repository..."
-mkdir git-clone
+mkdir -p git-clone
 cd git-clone
 git clone https://${TEKTON_DEMO_GIT_USERNAME}:${TEKTON_DEMO_GIT_PASSWORD}@git-codecommit.${AWS_REGION}.amazonaws.com/v1/repos/tekton-demo-app-deploy > /dev/null 
 cd tekton-demo-app-deploy

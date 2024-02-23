@@ -35,7 +35,7 @@ aws ecr delete-repository --repository-name=maven-builder --force
 aws ecr delete-repository --repository-name=tekton-demo-app --force
 
 echo "[INFO] $(date +"%T") Remove referenced security groups from cluster security group..."
-export TEKTON_DEMO_CLUSTER_NODE_SG=$(aws cloudformation describe-stacks --stack-name eksctl-tekton-pipeline-demo-cluster-cluster | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ClusterSecurityGroupId") | .OutputValue')
+export TEKTON_DEMO_CLUSTER_NODE_SG=$(aws cloudformation describe-stacks --stack-name eksctl-eks-handson-cluster-cluster | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ClusterSecurityGroupId") | .OutputValue')
 export TEKTON_DEMO_CHARTMUSEUM_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ChartmuseumSecurityGroup") | .OutputValue')
 export TEKTON_DEMO_DASHBOARD_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "DashboardSecurityGroup") | .OutputValue')
 export TEKTON_DEMO_APP_SG=$(aws cloudformation describe-stacks --stack-name TektonDemoInfra | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "AppSecurityGroup") | .OutputValue')
@@ -52,6 +52,7 @@ aws cloudformation wait stack-delete-complete --stack-name TektonDemoInfra
 
 echo "[INFO] $(date +"%T") Delete EKS IAM Configuration..."
 eksctl delete iamserviceaccount --config-file=eks-cluster-iam-config.yaml --approve
+eksctl delete iamserviceaccount --config-file=eks-cluster-addon-sa-config.yaml --approve
 
 echo "[INFO] $(date +"%T") Empty buckets..."
 export TEKTON_DEMO_CHARTMUSEUM_BUCKET=$(aws cloudformation describe-stacks --stack-name TektonDemoBuckets | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ChartmuseumBucket") | .OutputValue')
