@@ -15,7 +15,8 @@ spec:
       paths:
       - path: /
         backend:
-          service: el-codecommit-listener-interceptor
-          port:
-            number: 8080
+          service:
+            name: el-codecommit-listener-interceptor
+            port:
+              number: 8080
         pathType: Prefix

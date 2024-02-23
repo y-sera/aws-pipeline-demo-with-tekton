@@ -14,8 +14,9 @@ spec:
   - http:
       paths:
       - backend:
-          service: chartmuseum
-          port:
-            number: 8080
+          service:
+            name: chartmuseum
+            port:
+              number: 8080
         path: /*
         pathType: Prefix
