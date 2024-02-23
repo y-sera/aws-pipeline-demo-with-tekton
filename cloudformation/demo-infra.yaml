@@ -139,7 +139,7 @@ Resources:
         S3Bucket: !Ref TektonDemoSourceBucket
         S3Key: tekton-pipeline-demo-webhook-code.zip
       Handler: tekton-webhook-middleware
-      Runtime: go1.x
+      Runtime: provided.al2023
       Role: !GetAtt TektonDemoWebhookRole.Arn
       VpcConfig:
         SecurityGroupIds:
