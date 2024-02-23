@@ -18,5 +18,5 @@ spec:
             name: chartmuseum
             port:
               number: 8080
-        path: /*
+        path: /
         pathType: Prefix

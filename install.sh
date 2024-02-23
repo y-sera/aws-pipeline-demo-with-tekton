@@ -163,12 +163,12 @@ kubectl apply --filename https://github.com/tektoncd/dashboard/releases/download
 echo "[INFO] $(date +"%T") Deploy Chartmuseum [${CHARTMUSEUM_VERSION}]..."
 helm repo add chartmuseum https://chartmuseum.github.io/charts > /dev/null
 cat chartmuseum-values.yaml | envsubst | tee $TMP_FILE > /dev/null && mv $TMP_FILE chartmuseum-values.yaml
-kubectl apply -f namespace/support.yaml
-helm --upgrade install -n support chartmuseum chartmuseum/chartmuseum --version $CHARTMUSEUM_VERSION -f chartmuseum-values.yaml > /dev/null
+kubectl apply -f ./namespace/support.yaml
+helm upgrade --install -n support chartmuseum chartmuseum/chartmuseum --version $CHARTMUSEUM_VERSION -f chartmuseum-values.yaml > /dev/null
 
 # Install ArgoCD
 echo "[INFO] $(date +"%T") Deploy ArgoCD [${ARGOCD_VERSION}]..."
-kubectl apply -f namespace/argocd.yaml
+kubectl apply -f ./namespace/argocd.yaml
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml
 
 # Patch K8S SVCs
