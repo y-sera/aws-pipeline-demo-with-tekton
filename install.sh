@@ -103,11 +103,11 @@ cd ..
 # Build and upload tekton-webhook-middleware
 echo "[INFO] $(date +"%T") Compile webhook lambda and upload to S3..."
 cd tekton-webhook-middleware
-GOOS=linux GOARCH=amd64 go build -o tekton-webhook-middleware main.go > /dev/null
-zip tekton-pipeline-demo-webhook-code.zip tekton-webhook-middleware > /dev/null 
-aws s3 cp tekton-pipeline-demo-webhook-code.zip s3://${TEKTON_DEMO_CODE_BUCKET}/ > /dev/null
-rm -f tekton-pipeline-demo-webhook-code.zip
-rm -f tekton-webhook-middleware
+GOOS=linux GOARCH=amd64 go build -o bootstrap main.go > /dev/null
+zip bootstrap.zip bootstrap > /dev/null 
+aws s3 cp bootstrap.zip s3://${TEKTON_DEMO_CODE_BUCKET}/ > /dev/null
+rm -f bootstrap.zip
+rm -f bootstrap
 cd ..
 
 
