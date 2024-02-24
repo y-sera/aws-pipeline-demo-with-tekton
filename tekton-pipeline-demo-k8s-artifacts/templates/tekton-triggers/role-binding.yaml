@@ -8,5 +8,5 @@ subjects:
   name: tekton-triggers
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: tekton-triggers-eventlistener-roles
