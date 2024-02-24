@@ -3,7 +3,7 @@ set -e
 
 # Define version for third party dependencies
 export TEKTON_PIPELINE_VERSION="v0.56.1"
-export TEKTON_TRIGGERS_VERSION="v0.26.1"
+export TEKTON_TRIGGERS_VERSION="v0.23.1"
 export TEKTON_DASHBOARD_VERSION="v0.43.1"
 export CHARTMUSEUM_VERSION="3.1.0"
 export AWS_LB_CONTROLLER_VERSION="1.7.1"
