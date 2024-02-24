@@ -137,7 +137,7 @@ Resources:
       FunctionName: TektonPipelineDemoWebhook
       Code:
         S3Bucket: !Ref TektonDemoSourceBucket
-        S3Key: tekton-pipeline-demo-webhook-code.zip
+        S3Key: bootstrap.zip
       Handler: bootstrap
       Runtime: provided.al2023
       Role: !GetAtt TektonDemoWebhookRole.Arn
