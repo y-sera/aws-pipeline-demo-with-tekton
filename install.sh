@@ -2,9 +2,9 @@
 set -e
 
 # Define version for third party dependencies
-export TEKTON_PIPELINE_VERSION="v0.47.0"
-export TEKTON_TRIGGERS_VERSION="v0.23.1"
-export TEKTON_DASHBOARD_VERSION="v0.35.0"
+export TEKTON_PIPELINE_VERSION="v0.57.0"
+export TEKTON_TRIGGERS_VERSION="v0.26.1"
+export TEKTON_DASHBOARD_VERSION="v0.44.0"
 export CHARTMUSEUM_VERSION="3.1.0"
 export AWS_LB_CONTROLLER_VERSION="1.7.1"
 export AWS_EBS_CSI_DRIVER_VERSION="2.27.0"
@@ -154,6 +154,7 @@ kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline
 # Install Tekton Triggers
 echo "[INFO] $(date +"%T") Deploy Tekton Triggers [${TEKTON_TRIGGERS_VERSION}]..."
 kubectl apply --filename https://storage.googleapis.com/tekton-releases/triggers/previous/${TEKTON_TRIGGERS_VERSION}/release.yaml
+kubectl apply --filename https://storage.googleapis.com/tekton-releases/triggers/previous/${TEKTON_TRIGGERS_VERSION}/interceptors.yaml
 
 # Install Tekton Dashboard
 echo "[INFO] $(date +"%T") Deploy Tekton Dashboard [${TEKTON_DASHBOARD_VERSION}]..."
