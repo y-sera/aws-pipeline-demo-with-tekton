@@ -221,6 +221,18 @@ rm -rf git-clone
 echo "[INFO] $(date +"%T") Trigger initial pipelinerun..."
 aws codecommit test-repository-triggers --repository-name tekton-demo-app-build --triggers name=LambdaFunctionTrigger,destinationArn=$(aws codecommit get-repository-triggers --repository-name tekton-demo-app-build | jq -r .triggers[0].destinationArn),events=all,branches=master,customData=tekton-demo-app-build  > /dev/null 
 
+# wait for creating argocd-initial-admin-secret
+while true
+do
+  if [ -z "$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}')" ];
+    echo "[INFO] Waiting to create argo-initial-admin-secret..."
+    sleep 10
+    continue
+  else
+    break
+  fi
+done
+
 TEKTON_DEMO_ARGOCD_PW=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 TEKTON_DEMO_ARGOCD_URL=$(kubectl -n argocd get svc argocd-server -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
 TEKTON_DEMO_DASHBOARD_URL=$(aws elbv2 describe-load-balancers | jq -r '.LoadBalancers[] | select(.DNSName | contains("dashboard")) | .DNSName')
