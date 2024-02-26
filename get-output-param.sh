@@ -4,9 +4,9 @@ TEKTON_DEMO_APP_URL=$(aws elbv2 describe-load-balancers | jq -r '.LoadBalancers[
 TEKTON_DEMO_DASHBOARD_URL=$(aws elbv2 describe-load-balancers | jq -r '.LoadBalancers[] | select(.DNSName | contains("dashboard")) | .DNSName')
 TEKTON_DEMO_ARGOCD_URL=$(kubectl -n argocd get svc argocd-server -o jsonpath='{.status.loadBalancer.ingress[*].hostname}')
 AWS_REGION=$(aws configure get region)
-TEKTON_DEMO_GIT_USERNAME=$(cat tekton-pipeline-demo-k8s-artifacts/values.yaml |grep username | cut -f2 -d' ')
-TEKTON_DEMO_GIT_PASSWORD=$(cat tekton-pipeline-demo-k8s-artifacts/values.yaml |grep password | cut -f2 -d' ')
-eTEKTON_DEMO_ARGOCD_PW=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+TEKTON_DEMO_GIT_USERNAME=$(cat tekton-pipeline-demo-k8s-artifacts/values.yaml |grep 'username:' | sed 's/^.*username: //g' | sed 's/"//g')
+TEKTON_DEMO_GIT_PASSWORD=$(cat tekton-pipeline-demo-k8s-artifacts/values.yaml |grep 'password:' | sed 's/^.*password: //g' | sed 's/"//g')
+TEKTON_DEMO_ARGOCD_PW=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 
 echo "[INFO] $(date +"%T") Display output values..."
 echo "[INFO] DEMO APP => http://${TEKTON_DEMO_APP_URL}"
