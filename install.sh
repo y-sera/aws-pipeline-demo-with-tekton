@@ -224,7 +224,7 @@ aws codecommit test-repository-triggers --repository-name tekton-demo-app-build 
 # wait for creating argocd-initial-admin-secret
 while true
 do
-  if [ -z "$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}')" ];
+  if [ -z "$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}')" ];then
     echo "[INFO] Waiting to create argo-initial-admin-secret..."
     sleep 10
     continue
