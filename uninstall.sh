@@ -69,4 +69,7 @@ export AWS_AUTHENTICATED_IDENTITY=$(aws sts get-caller-identity | jq -r .Arn | c
 export AWS_GIT_CREDENTIAL_ID=$(aws iam list-service-specific-credentials --user-name $AWS_AUTHENTICATED_IDENTITY --service-name codecommit.amazonaws.com | jq -r .ServiceSpecificCredentials[0].ServiceSpecificCredentialId)
 aws iam delete-service-specific-credential --service-specific-credential-id $AWS_GIT_CREDENTIAL_ID
 
+echo "[INFO] $(date +"%T") Delete LogGroup for lambda..."
+aws logs delete-log-group --log-group-name /aws/lambda/TektonPipelineDemoWebhook
+
 echo "[INFO] $(date +"%T") Cleanup successfully completed..."
