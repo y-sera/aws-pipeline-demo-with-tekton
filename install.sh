@@ -121,10 +121,10 @@ export TEKTON_DEMO_WEBHOOK_SG=$(aws cloudformation describe-stacks --stack-name 
 
 # Update Security Group of Worker Nodes
 echo "[INFO] $(date +"%T") Update EKS worker node security groups..."
-aws ec2 authorize-security-group-ingress --group-id $TEKTON_DEMO_CLUSTER_NODE_SG --ip-permissions IpProtocol=tcp,FromPort=30000,ToPort=32767,UserIdGroupPairs=[{GroupId=$TEKTON_DEMO_DASHBOARD_SG}]
-aws ec2 authorize-security-group-ingress --group-id $TEKTON_DEMO_CLUSTER_NODE_SG --ip-permissions IpProtocol=tcp,FromPort=30000,ToPort=32767,UserIdGroupPairs=[{GroupId=$TEKTON_DEMO_APP_SG}]
-aws ec2 authorize-security-group-ingress --group-id $TEKTON_DEMO_CLUSTER_NODE_SG --ip-permissions IpProtocol=tcp,FromPort=30000,ToPort=32767,UserIdGroupPairs=[{GroupId=$TEKTON_DEMO_WEBHOOK_SG}]
-aws ec2 authorize-security-group-ingress --group-id $TEKTON_DEMO_CLUSTER_NODE_SG --ip-permissions IpProtocol=tcp,FromPort=30000,ToPort=32767,UserIdGroupPairs=[{GroupId=$TEKTON_DEMO_CHARTMUSEUM_SG}]
+aws ec2 authorize-security-group-ingress --group-id $TEKTON_DEMO_CLUSTER_NODE_SG --ip-permissions IpProtocol=tcp,FromPort=30000,ToPort=32767,UserIdGroupPairs=[{GroupId=$TEKTON_DEMO_DASHBOARD_SG}] --no-paginate
+aws ec2 authorize-security-group-ingress --group-id $TEKTON_DEMO_CLUSTER_NODE_SG --ip-permissions IpProtocol=tcp,FromPort=30000,ToPort=32767,UserIdGroupPairs=[{GroupId=$TEKTON_DEMO_APP_SG}] --no-paginate
+aws ec2 authorize-security-group-ingress --group-id $TEKTON_DEMO_CLUSTER_NODE_SG --ip-permissions IpProtocol=tcp,FromPort=30000,ToPort=32767,UserIdGroupPairs=[{GroupId=$TEKTON_DEMO_WEBHOOK_SG}] --no-paginate
+aws ec2 authorize-security-group-ingress --group-id $TEKTON_DEMO_CLUSTER_NODE_SG --ip-permissions IpProtocol=tcp,FromPort=30000,ToPort=32767,UserIdGroupPairs=[{GroupId=$TEKTON_DEMO_CHARTMUSEUM_SG}] --no-paginate
 
 # Build cloner image
 echo "[INFO] $(date +"%T") Build cloner container image and upload to ECR..."
